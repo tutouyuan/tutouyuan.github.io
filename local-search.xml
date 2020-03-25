@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>esp8266 01s加小爱同学(米家)控制卧室灯</title>
+    <link href="/2020/03/24/esp8266%2001s%E5%8A%A0%E5%B0%8F%E7%88%B1%E5%90%8C%E5%AD%A6%E6%8E%A7%E5%88%B6%E5%8D%A7%E5%AE%A4%E7%81%AF/"/>
+    <url>/2020/03/24/esp8266%2001s%E5%8A%A0%E5%B0%8F%E7%88%B1%E5%90%8C%E5%AD%A6%E6%8E%A7%E5%88%B6%E5%8D%A7%E5%AE%A4%E7%81%AF/</url>
+    
+    <content type="html"><![CDATA[<p><strong>填坑</strong><a id="more"></a><br><strong>前几天买的esp8266 01s昨天到拿到了</strong></p><p><img src="/img/esp1.jpg" srcset="/img/loading.gif" alt="tip"></p><div><strong>经过了我一天一夜的摸索和专业老师的指导，外加b站的视频，填好了自己挖的坑</strong></div><strong>其实自己动手实践挺有意思的</strong><div><strong>以下为串口监视器反馈的灯的状况</strong></div><p><img src="/img/esp8266.png" srcset="/img/loading.gif" alt="tip"></p><div><strong>记录一下制作步骤</strong></div><h1>第一步：NodeMCU固件下载</h1><h1>第二步：打开点灯科技app新建设备，打开米家，选择第三方平台设备，选择点灯科技，关联设备</h1><strong>点灯科技新建设备时，需要复制好设备的key，等会填入代码中</strong><div><strong>图一：</strong></div><p><img src="/img/esp6.png" srcset="/img/loading.gif" alt="tip"></p><div><strong>图二：</strong></div><p><img src="/img/esp82663.png" srcset="/img/loading.gif" alt="tip"></p><div><strong>图三：</strong></div><p><img src="/img/esp82662.png" srcset="/img/loading.gif" alt="tip"></p><h1>第三步：打开IDE，编写代码，进行烧录</h1><p><img src="/img/esp3.jpg" srcset="/img/loading.gif" alt="tip"><br><hiv>代码取自爆改车间，代码如下：</hiv></p><pre><code>#define BLINKER_WIFI#define BLINKER_MIOT_OUTLET   &#x2F;&#x2F;小爱同学#include &lt;Blinker.h&gt;char auth[] &#x3D; &quot;**********&quot;;&#x2F;&#x2F;点灯app上获取的keychar ssid[] &#x3D; &quot;**********&quot;;&#x2F;&#x2F;wifi名称char pswd[] &#x3D; &quot;**********&quot;;&#x2F;&#x2F;wifi密码BlinkerButton Button1(&quot;btn&quot;);     &#x2F;&#x2F;定义按钮数据bool oState &#x3D; false;int counter &#x3D; 0;void miotPowerState(const String &amp; state){    BLINKER_LOG(&quot;need set power state: &quot;, state);    if (state &#x3D;&#x3D; BLINKER_CMD_ON) {     &#x2F;&#x2F;小爱同学控制开命令        digitalWrite(0, LOW);        delay(200);        digitalWrite(0, HIGH);        BlinkerMIOT.powerState(&quot;on&quot;);        BlinkerMIOT.print();        oState &#x3D; true;    }    else if (state &#x3D;&#x3D; BLINKER_CMD_OFF) {   &#x2F;&#x2F;小爱同学控制关命令        digitalWrite(0,LOW);        delay(200);        digitalWrite(0, HIGH);        BlinkerMIOT.powerState(&quot;off&quot;);        BlinkerMIOT.print();        oState &#x3D; false;    }}void miotQuery(int32_t queryCode)      &#x2F;&#x2F;小爱同学控制{    BLINKER_LOG(&quot;MIOT Query codes: &quot;, queryCode);    switch (queryCode)    {        case BLINKER_CMD_QUERY_ALL_NUMBER :            BLINKER_LOG(&quot;MIOT Query All&quot;);            BlinkerMIOT.powerState(oState ? &quot;on&quot; : &quot;off&quot;);            BlinkerMIOT.print();            break;        case BLINKER_CMD_QUERY_POWERSTATE_NUMBER :            BLINKER_LOG(&quot;MIOT Query Power State&quot;);            BlinkerMIOT.powerState(oState ? &quot;on&quot; : &quot;off&quot;);            BlinkerMIOT.print();            break;        default :            BlinkerMIOT.powerState(oState ? &quot;on&quot; : &quot;off&quot;);            BlinkerMIOT.print();            break;    }}void dataRead(const String &amp; data)      &#x2F;&#x2F; 如果未绑定的组件被触发，则会执行其中内容{    BLINKER_LOG(&quot;Blinker readString: &quot;, data);    Blinker.vibrate();        uint32_t BlinkerTime &#x3D; millis();        Blinker.print(&quot;millis&quot;, BlinkerTime);}void button1_callback(const String &amp; state)     &#x2F;&#x2F;点灯app内控制按键触发{    BLINKER_LOG(&quot;get button state: &quot;, state);    digitalWrite(0,LOW);    delay(200);    digitalWrite(0, HIGH);}void setup(){    Serial.begin(115200);    BLINKER_DEBUG.stream(Serial);    pinMode(0, OUTPUT);              &#x2F;&#x2F;定义io口为输出    digitalWrite(0, HIGH);           &#x2F;&#x2F;定义io默认为高电平    Blinker.begin(auth, ssid, pswd);    Blinker.attachData(dataRead);        BlinkerMIOT.attachPowerState(miotPowerState);    BlinkerMIOT.attachQuery(miotQuery);    Button1.attach(button1_callback);      }void loop(){    Blinker.run();}</code></pre><div><strong>代码需要修改四个地方，需要填写在点灯app上获取的key，自己家的WiFi名称，WiFi密码，点灯科技新建设备时按键的名称</strong></div><h1>第四步连接电路</h1><strong>因为继电器需要5v电源，所以可以使用手机充电器或者5v电源模块，我这里使用的是手机充电器</strong><strong><div>将烧写好的esp8266插上物联网继电器再连接5v手机充电器和外电路就ok了</div></strong><p><img src="/img/esp4.jpg" srcset="/img/loading.gif" alt="tip"><br><strong>继电器连接示意图：</strong></p><p><img src="/img/esp8266%E7%BB%A7%E7%94%B5%E5%99%A8.png" srcset="/img/loading.gif" alt="tip"></p><p><strong>到这里就可以通过小爱同学，语音控制开关卧室灯了</strong></p><p><img src="/img/%E5%BC%80.jpg" srcset="/img/loading.gif" alt="tip"></p><p><img src="/img/%E5%85%B3.jpg" srcset="/img/loading.gif" alt="tip"></p><p><strong>一个很简单的物联网的应用。在家没事，做着玩。毕竟纸上得来终觉浅，绝知此事要躬行。</strong><br><strong><hiv>这篇笔记记录的很粗糙，可能只有我自己能看懂吧(摊手)</hiv></strong></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>IoT</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>单片机</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>闲得慌</title>
+    <link href="/2020/03/20/%E9%97%B2%E5%BE%97%E6%85%8C/"/>
+    <url>/2020/03/20/%E9%97%B2%E5%BE%97%E6%85%8C/</url>
+    
+    <content type="html"><![CDATA[<p><strong>一天天的闲的慌，给自己挖了个坑</strong><a id="more"></a><br><strong>啥都不会，还啥都想弄</strong><br><strong>等快递到了，我研究研究再更新填坑经历</strong></p><p><img src="/img/qq.jpg" srcset="/img/loading.gif" alt="tip"></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>IoT</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>单片机</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>数码管加按键,实现(0-9)输出和逆序输出</title>
+    <link href="/2020/03/18/%E6%8C%89%E9%94%AE%E6%95%B0%E7%A0%81%E7%AE%A1/"/>
+    <url>/2020/03/18/%E6%8C%89%E9%94%AE%E6%95%B0%E7%A0%81%E7%AE%A1/</url>
+    
+    <content type="html"><![CDATA[<p><strong>单片机学习记录-2</strong><a id="more"></a></p><h1>proteus(仿真)+keil实现操作</h1><p><img src="/img/%E4%BD%BF%E7%94%A8%E5%88%B0%E7%9A%84%E8%BD%AF%E4%BB%B6.png" srcset="/img/loading.gif" alt="tip"></p><h2>第一步proteus(仿真)软件进行仿真电路设计</h2><div><strong>电路图如下：</strong></div><p><img src="/img/%E6%95%B0%E7%A0%81%E7%AE%A1%E4%BB%BF%E7%9C%9F%E7%94%B5%E8%B7%AF%E5%9B%BE.png" srcset="/img/loading.gif" alt="tip"></p><h2>第二步keil进行单片机C程序编写</h2><div><strong>代码如下：</strong></div><pre><code>#include&lt;reg51.h&gt;sbit led&#x3D;P2^0;sbit key&#x3D;P3^0;void delay();char seg[]&#x3D;{0xc0,0xf9,0xa4,0xb0,0x99,0x92,0x82,0xf8,0x80,0x90};&#x2F;&#x2F;数码管输出数字码数组(0-9)void main(void){ int i;  while(1)    {      if(0&#x3D;&#x3D;key)&#x2F;&#x2F;判断开关状态是否等于0{       for(i&#x3D;0;i&lt;&#x3D;9;i++)&#x2F;&#x2F;(0-9依次输出)   { P2&#x3D;seg[i]; delay();  if(0!&#x3D;key)&#x2F;&#x2F;判断开关状态是否变化            {       break;            }   }}  else{       for(i&#x3D;9;i&gt;&#x3D;0;i--)&#x2F;&#x2F;(9-0依次输出)   { P2&#x3D;seg[i]; delay();  if(0&#x3D;&#x3D;key)&#x2F;&#x2F;判断开关状态是否变化   {               break;   }   }}}}void delay()&#x2F;&#x2F;延时，避免数码管显示过快{int i,j;for(i&#x3D;0;i&lt;200;i++)for(j&#x3D;0;j&lt;200;j++){}}</code></pre><h2>第三步通过proteus将在keil中编写的C程序烧写到AT89C51单片机中</h2><div><strong>运行效果如下：</strong></div><div>注：该GIF显示不完全</div><p><img src="/img/%E6%95%B0%E7%A0%81%E7%AE%A1%E5%AE%9E%E7%8E%B0%E6%95%88%E6%9E%9C.gif" srcset="/img/loading.gif" alt="tip"></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>IoT</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>单片机</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>MYSQL</title>
+    <link href="/2020/03/11/MYSQL/"/>
+    <url>/2020/03/11/MYSQL/</url>
+    
+    <content type="html"><![CDATA[<p><strong>如何创建一个数据库</strong><a id="more"></a></p><h1>创建一个数据库</h1>第一需要下载MySQL，如何下载MySQL就不多说明了，<del style="color:#999">下次写一篇如何安装MySQL</del>咳咳，算了，当我没说，现在默认安装好了MySQL<div>这里附上MySQL的下载地址：https://www.mysql.com</div><div>打开MySQL</div><div>点击左上角的连接，再点击MySQL。创建连接，主机，用户名，端口为默认就好,连接名和密码自定义,密码可以为空</div><p><img src="/img/01.png" srcset="/img/loading.gif" alt="tip"><br><img src="/img/mysql2.png" srcset="/img/loading.gif" alt="tip"></p><div>输入完成后，点击连接测试</div><p><img src="/img/mysql3.png" srcset="/img/loading.gif" alt="tip"></p><div>显示连接成功，就可以进行下一步了</div><p><img src="/img/mysql4.png" srcset="/img/loading.gif" alt="tip"></p><div>双击刚刚得到的连接，发现连接图标变绿了，说明连接成功，就可以开始创建数据库了</div><p><img src="/img/mysql5.png" srcset="/img/loading.gif" alt="tip"></p><div>注意!当前的4个数据库请不要删除或者修改，否则会出现未知错误。</div><div>点击左上角新建查询，就可以开始输入命令创建数据库</div><p><img src="/img/6.png" srcset="/img/loading.gif" alt="tip"></p><div>MySQL服务器上的数据库可以有多个，分别存储不同的数据，想要将数据存放到数据库中，就必须创建数据库，其基本语法格式为：create database 数据库名称;<div>例：create database mydb; </div><div>输入时所有标点符号必须全部为英文标点符号！！！</div><div>数据库创建后，MySQL会在存储数据的data目录中创建一个与数据库同名的子目录（即mydb）, 同时在此目录下会生成一个db.opt文件，保存数据库选项</div><div>如果创建的数据库已经存在，就不能再重复创建，因此如果创建前不知道一个数据库是否存在，可以使用以下语句创建：<div>create database  if not exists 数据库名称</div><div>例：create database mydb if not exists mydb;</div><div>输入完成后，我们右键勾选到该段代码，点击上方运行已选择的</div><p><img src="/img/7.png" srcset="/img/loading.gif" alt="tip"></p><div>出现以下提示，说明数据库创建成功</div><p><img src="/img/8.png" srcset="/img/loading.gif" alt="tip"></p><div>此数据库为刚刚创建好的数据库</div><p><img src="/img/9.png" srcset="/img/loading.gif" alt="tip"></p><div>到此，数据库就创建完成了，非常简单</div><div>以下为数据库常用命令</div><div>查看MySQL服务器下所有数据库：show databases;</div><div>查看指定数据库的创建信息；show create database 数据库名称;</div><div>在MySQL服务器中，如果要清除一个数据库中的所有数据，并回收为数据库分配的存储空间，则可以执行删除数据库的操作：drop database 数据库名称;</div><strong><p align="right">哈哈哈哈，我是才入门的小白，文章有错误欢迎指出</p></strong><head>  <script src='//unpkg.com/valine/dist/Valine.min.js'></script><meta name="generator" content="Hexo 4.2.0"></head><body>  <div id="vcomments"></div>  <script>      new Valine({          el: '#vcomments',          appId: 'xYwLrAegebzhPenz61fgY9KO-MdYXbMMI',          appKey: 'NHlXIpEEFQ5ASjDCF7Sr1hhC'      })  </script></body>]]></content>
+    
+    
+    <categories>
+      
+      <category>SQL</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>MySQL</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>文案猿</title>
+    <link href="/2020/03/10/%E6%96%87%E6%A1%88%E7%8C%BF-2/"/>
+    <url>/2020/03/10/%E6%96%87%E6%A1%88%E7%8C%BF-2/</url>
+    
+    <content type="html"><![CDATA[<p><strong>我的确是废物,<br>学习没学好,<br>游戏打不好,<br>喜欢的人留不住,<br>也从来没被人坚定的选择过.<br></strong></p><center><iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1422303419&auto=1&height=66"></iframe></center>]]></content>
+    
+    
+    <categories>
+      
+      <category>丧</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>文案猿</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>文案猿</title>
+    <link href="/2020/03/07/%E6%96%87%E6%A1%88%E7%8C%BF-1/"/>
+    <url>/2020/03/07/%E6%96%87%E6%A1%88%E7%8C%BF-1/</url>
+    
+    <content type="html"><![CDATA[<p><strong>你口口声声说不再相信爱情那是因为,<br>你心里有一个永远无法忘记的人,<br>最终你会明白,<br>万般皆是命,<br>半点不由人.</strong></p><center><iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1417558371&auto=1&height=66"></iframe></center>]]></content>
+    
+    
+    <categories>
+      
+      <category>丧</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>文案猿</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>文案猿</title>
+    <link href="/2020/03/06/%E6%96%87%E6%A1%88%E7%8C%BF/"/>
+    <url>/2020/03/06/%E6%96%87%E6%A1%88%E7%8C%BF/</url>
+    
+    <content type="html"><![CDATA[<p><strong>原来互相喜欢,互相惦记的两个人，也可能会错过</strong></p><center><iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1421457004&auto=1&height=66"></iframe></center>]]></content>
+    
+    
+    <categories>
+      
+      <category>丧</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>文案猿</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>单片机入门</title>
+    <link href="/2020/03/05/%E5%8D%95%E7%89%87%E6%9C%BA%E5%85%A5%E9%97%A8/"/>
+    <url>/2020/03/05/%E5%8D%95%E7%89%87%E6%9C%BA%E5%85%A5%E9%97%A8/</url>
+    
+    <content type="html"><![CDATA[<p><strong>单片机学习记录-1</strong><a id="more"></a></p><h1>单片机的常见产品</h1><div>1.Intel公司</div>MCS-51系列单片机：8031，8051，8751，8032，8052<div>入门可以使用8051系列单片机</div><div>2.Motorola公司</div>8位单片机代表：M6805，M68HC05，M68HC11，M68HC12<div>3.ATMEL公司</div>8位单片机代表：AT89，AT90两个系列<div>4.Microchip公司</div>8位PIC系列单片机：PIC16C5X，PIC12C6XX，PIC17CXX<h1>入门级8051系列</h1><p> <img src="/img/c51.jpg" srcset="/img/loading.gif" alt="tip"></p><div>单片机能储存的程序空间有限</div><div>需要代码要小</div><div>所以使用汇编语言或者C语言进行程序设计才够小</div><span>典型的51单片机封装形式为双列直插</span><h2>单片机的开发过程</h2><div>1,编程</div><div>2,编译生成目标文件</div><div>3,烧写至单片机</div><strong>由于还没有开学，手上没有开发板，可以采用仿真的方法来学习单片机</strong><div>1,单片机的编程软件：keil</div><div>2,单片机的仿真软件：protues</div><h2>通过程序设计来控制单片机的功能</h2><strong>第一步程序设计：在keil中写C语言程序，生成单片机能够执行的目标文件-(.HEX)</strong><div><strong>第二步单片机加载(.HEX)运行：</strong></div><div>方式一:(实物运行)将.HEX烧写(带电的情况下，用编程器将文件输入到单片机)到单片机里面</div><div>方式二：(学习运行)通过protues仿真电路验证代码</div><br></br><strong><p align="right">未完结......</p></strong><head>  <script src='//unpkg.com/valine/dist/Valine.min.js'></script><meta name="generator" content="Hexo 4.2.0"></head><body>  <div id="vcomments"></div>  <script>      new Valine({          el: '#vcomments',          appId: 'xYwLrAegebzhPenz61fgY9KO-MdYXbMMI',          appKey: 'NHlXIpEEFQ5ASjDCF7Sr1hhC'      })  </script></body>]]></content>
+    
+    
+    <categories>
+      
+      <category>IoT</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>单片机</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>对于你而言</title>
+    <link href="/2020/03/02/%E5%AF%B9%E4%BA%8E%E4%BD%A0%E8%80%8C%E8%A8%80/"/>
+    <url>/2020/03/02/%E5%AF%B9%E4%BA%8E%E4%BD%A0%E8%80%8C%E8%A8%80/</url>
+    
+    <content type="html"><![CDATA[<p>int day,MyLife;<br>for(day=0;day&lt;=MyLife;day++)<br>printf(“Love you”);</p><center><iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=1397583368&auto=1&height=66"></iframe></center>]]></content>
+    
+    
+    <categories>
+      
+      <category>野性入骨</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>初心</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>第一篇博客</title>
+    <link href="/2020/03/02/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/"/>
+    <url>/2020/03/02/%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</url>
+    
+    <content type="html"><![CDATA[<p>第一篇博客<br>该博客开始记录我的秃头路程<br><img src="/img/1.png" srcset="/img/loading.gif" alt="tip"></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>秃头路程</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>编程狗</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
